@@ -15,16 +15,19 @@ const registerUser = asyncHandler(async (req, res) => {
   //check for user creation
   //return res
 
+  //extracting all the data points
   const { fullName, email, username, password } = req.body;
-  console.log("email: ", email);
+  //console.log("email: ", email);
 
+  // check if the points are empty or not!
   if (
     [fullName, email, username, password].some((field) => field?.trim() === "") //if the field is empty even after trim, then the field is empty!!
   ) {
     throw new ApiError(400, "All fields are required!"); //can use this beacuse of ApiErrors utils
   }
-  const existedUser = User.findOne({
-    //to figure out if the user already exists or not
+
+  //To check if the user already exists or not!
+  const existedUser = await User.findOne({
     $or: [{ username }, { email }], //returns the first document that it encounters
   });
 
@@ -33,7 +36,12 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  let coverImageLocalPath;
+  if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+    coverImageLocalPath = req.files.coverImage[0]?.path;
+  }
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required!");
@@ -46,6 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar file is required");
   }
 
+  //If everything is done successfully! Then create an object
   const user = await User.create({
     fullName,
     avatar: avatar.url,
@@ -64,7 +73,7 @@ const registerUser = asyncHandler(async (req, res) => {
     //here it is checked!
     throw new ApiError(500, "Something went wrong while registering the user!");
   }
-
+  //If user is created then set status 201 and return the message
   return res
     .status(201)
     .json(new ApiResponse(200, createdUser, "User Registered Successfully"));
